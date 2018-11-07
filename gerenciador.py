@@ -5,16 +5,19 @@ from garcom import Garcom
 from time import sleep
 
 
-class Gerenciador:
+class Gerenciador(Thread):
     def __init__(self, numClientes, numGarcons, capacidadeAtendimentoGarcons, numRodadas):
+        Thread.__init__(self)
+        
         self.fechouBar = False
-        self.existemClientesNoBar = True
+        #~ self.existemClientesNoBar = True
         self.numClientes = numClientes
         self.numGarcons = numGarcons
         self.capacidadeAtendimentoGarcons = capacidadeAtendimentoGarcons
         self.numRodadas = numRodadas
         self.rodada = 0
         self.semaforo = Semaphore()
+        self.semaforoGarcons = Semaphore()
         self.novaRodada = Event()
         self.clientesAtendidosNaRodada = 0
 
@@ -29,6 +32,23 @@ class Gerenciador:
         for i in range(numGarcons):
             g = Garcom(self, i, self.capacidadeAtendimentoGarcons)
             self.garcons.append(g)
+    
+    def run(self):
+        while not self.fechouBar:
+            self.semaforo.release()
+            self.novaRodada.clear()
+            print("Rodada " + str(self.rodada) + " em 10s")
+            sleep(10)
+            self.semaforo.acquire()
+            s = ""
+            for c in self.clientesEsperandoAtendimento:
+                s += str(c.id)
+                s += " "
+            print("Fechou rodada " + str(self.rodada) + ". Clientes a ser atendidos = " + s)
+            self.incrementaRodada()
+            self.novaRodada.set()
+        
+        
 
 
     def startClientes(self):
@@ -41,20 +61,10 @@ class Gerenciador:
     
     def incrementaRodada(self):
         self.semaforo.acquire()
-        self.novaRodada.clear()
-        if(self.clientesAtendidosNaRodada == self.numClientes):
-            self.rodada += 1
-            # print(colored("FIM DA RODADA {}".format(self.rodada), 'red'))
-            print("FIM DA RODADA {}".format(self.rodada))
-            self.clientesAtendidosNaRodada = 0
-            if(self.rodada == self.numRodadas):
-                self.fechouBar = True
-                # print(colored("FECHOU O BAR", 'red'))
-                print("FECHOU O BAR")
-                self.novaRodada.set()
-                
-            else:
-                self.novaRodada.set()
+        self.rodada += 1
+        if(self.rodada >= self.numRodadas):
+            self.fechouBar = True
+            print("O BAR FECHOU")
         self.semaforo.release()
 
 

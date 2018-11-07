@@ -12,29 +12,24 @@ class Garcom(Thread):
 
     def run(self):
         while not self.gerenciador.fechouBar:
+            self.gerenciador.novaRodada.wait()
             if(self.recebeMaximoPedidos()):
                 self.registraPedidos()
                 self.entregaPedidos()
-                self.gerenciador.incrementaRodada()
 
     def recebeMaximoPedidos(self):
-        self.gerenciador.semaforo.acquire()
-        if(len(self.gerenciador.clientesEsperandoAtendimento) >= self.capacidadeDeAtendimento):
-            for i in range(self.capacidadeDeAtendimento):
-                self.clientesParaAtender.append(self.gerenciador.clientesEsperandoAtendimento.pop())
-            self.gerenciador.semaforo.release()
-            return True
-        elif((self.gerenciador.numClientes - self.gerenciador.clientesAtendidosNaRodada)== len(self.gerenciador.clientesEsperandoAtendimento)):
-            if(len(self.gerenciador.clientesEsperandoAtendimento) == 0):
-                self.gerenciador.semaforo.release()
-                return False
-            for i in range(len(self.gerenciador.clientesEsperandoAtendimento)):
-                self.clientesParaAtender.append(self.gerenciador.clientesEsperandoAtendimento.pop())
-            self.gerenciador.semaforo.release()
-            return True
-        else:
-            self.gerenciador.semaforo.release()
+        self.gerenciador.semaforoGarcons.acquire()
+        
+        numClientesAtender = min(len(self.gerenciador.clientesEsperandoAtendimento), self.capacidadeDeAtendimento)
+        if(numClientesAtender == 0):
+            self.gerenciador.semaforoGarcons.release()
             return False
+            
+        for i in range(numClientesAtender):
+            self.clientesParaAtender.append(self.gerenciador.clientesEsperandoAtendimento.pop(0))
+            
+        self.gerenciador.semaforoGarcons.release()
+        return True
 
     def registraPedidos(self):
         s = ""
