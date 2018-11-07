@@ -9,21 +9,29 @@ class Cliente(Thread):
         self.gerenciador = gerenciador
         self.esperarAtendimento = Event()
         self.id = id
+        self.qntBebidasRecebidas = 0
 
     def run(self):
         while (not self.gerenciador.fechouBar):
             # self.gerenciador.novaRodada.clear()
-            self.fazPedido()
-            self.esperarAtendimento.wait()
-            self.consomePedido()
-            self.gerenciador.novaRodada.wait()
-            if(self.gerenciador.fechouBar):
-                print('Cliente {} saindo'.format(self.id))
+            if(self.fazPedido()):
+                self.qntBebidasRecebidas += 1
+                self.esperarAtendimento.wait()
+                self.consomePedido()
+            else:
+                print('Cliente {} esperando nova rodada'.format(self.id))
+                self.gerenciador.novaRodada.wait()
+        print('Cliente {} saindo'.format(self.id))
+
 
     def fazPedido(self):
         self.gerenciador.semaforo.acquire()
-        self.gerenciador.clientesEsperandoAtendimento.append(self)
+        if(self.qntBebidasRecebidas <= self.gerenciador.rodada):
+            self.gerenciador.clientesEsperandoAtendimento.append(self)
+            self.gerenciador.semaforo.release()
+            return True
         self.gerenciador.semaforo.release()
+        return False
     
     def consomePedido(self):
         t = random() * 10

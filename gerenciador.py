@@ -1,5 +1,5 @@
 from threading import Thread, Semaphore, Event
-from termcolor import colored
+# from termcolor import colored
 from cliente import Cliente
 from garcom import Garcom
 from time import sleep
@@ -41,13 +41,18 @@ class Gerenciador:
     
     def incrementaRodada(self):
         self.semaforo.acquire()
+        self.novaRodada.clear()
         if(self.clientesAtendidosNaRodada == self.numClientes):
             self.rodada += 1
-            print(colored("FIM DA RODADA {}".format(self.rodada), 'red'))
+            # print(colored("FIM DA RODADA {}".format(self.rodada), 'red'))
+            print("FIM DA RODADA {}".format(self.rodada))
             self.clientesAtendidosNaRodada = 0
             if(self.rodada == self.numRodadas):
                 self.fechouBar = True
-                print(colored("FECHOU O BAR", 'red'))
+                # print(colored("FECHOU O BAR", 'red'))
+                print("FECHOU O BAR")
+                self.novaRodada.set()
+                
             else:
                 self.novaRodada.set()
         self.semaforo.release()

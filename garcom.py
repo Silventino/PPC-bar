@@ -20,7 +20,15 @@ class Garcom(Thread):
     def recebeMaximoPedidos(self):
         self.gerenciador.semaforo.acquire()
         if(len(self.gerenciador.clientesEsperandoAtendimento) >= self.capacidadeDeAtendimento):
-            for _ in range(self.capacidadeDeAtendimento):
+            for i in range(self.capacidadeDeAtendimento):
+                self.clientesParaAtender.append(self.gerenciador.clientesEsperandoAtendimento.pop())
+            self.gerenciador.semaforo.release()
+            return True
+        elif((self.gerenciador.numClientes - self.gerenciador.clientesAtendidosNaRodada)== len(self.gerenciador.clientesEsperandoAtendimento)):
+            if(len(self.gerenciador.clientesEsperandoAtendimento) == 0):
+                self.gerenciador.semaforo.release()
+                return False
+            for i in range(len(self.gerenciador.clientesEsperandoAtendimento)):
                 self.clientesParaAtender.append(self.gerenciador.clientesEsperandoAtendimento.pop())
             self.gerenciador.semaforo.release()
             return True
