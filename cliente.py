@@ -9,32 +9,26 @@ class Cliente(Thread):
         self.gerenciador = gerenciador
         self.esperarAtendimento = Event()
         self.id = id
-        self.qntBebidasRecebidas = 0
 
     def run(self):
-        while (not self.gerenciador.fechouBar):
-            # self.gerenciador.novaRodada.clear()
-            if(self.fazPedido()):
-                self.qntBebidasRecebidas += 1
-                self.esperarAtendimento.wait()
-                self.consomePedido()
-            else:
-                print('Cliente {} esperando nova rodada'.format(self.id))
-                self.gerenciador.novaRodada.wait()
+        t = random() * 10
+        sleep(t)
+        print("Cliente " + str(self.id) + " entrou no bar")
+        while (not self.gerenciador.fechouBar):                 # enquanto o bar está aberto
+            self.fazPedido()                                    # se coloca na fila de espera para atendimento
+            self.esperarAtendimento.wait()                      # espera a bebida chegar              
+            self.consomePedido()                                # consome a bebida
+        self.gerenciador.clientes.remove(self)                  # quando o bar fecha, o cliente se retira da lista de clientes
         print('Cliente {} saindo'.format(self.id))
 
 
     def fazPedido(self):
         self.gerenciador.semaforo.acquire()
-        if(self.qntBebidasRecebidas <= self.gerenciador.rodada):
-            self.gerenciador.clientesEsperandoAtendimento.append(self)
-            self.gerenciador.semaforo.release()
-            return True
+        self.gerenciador.clientesEsperandoAtendimento.append(self)
         self.gerenciador.semaforo.release()
-        return False
     
     def consomePedido(self):
-        t = random() * 10
+        t = random() * 10                                       # demora um tempo entre 0 e 10s para beber o drink
         print("cliente " + str(self.id) + " bebendo [" + str(t) + "]")
         sleep(t)
         self.esperarAtendimento.clear()

@@ -14,5 +14,6 @@ def main():
     )
     g.startGarcons()
     g.startClientes()
+    g.start()
 
 main()
